@@ -1,0 +1,54 @@
+# Build artifacts
+bin/
+obj/
+out/
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+appsettings.Development.json
+appsettings.json
+
+# Logs
+*.log
+logs/
+
+# Rider / IntelliJ
+.idea/
+*.iml
+
+# VS Code
+.vscode/
+
+# Visual Studio cache
+.vs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+
+# Test and coverage results
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+secrets.json
+
+# Generated files
+*.generated.cs
+
+# Docker local overrides
+docker-compose.override.yml

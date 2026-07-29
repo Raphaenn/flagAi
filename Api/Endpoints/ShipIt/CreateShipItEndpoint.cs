@@ -122,13 +122,15 @@ public static class CreateShipItEndpoint
 
     private static string? ResolvePromptPath()
     {
+        var baseDir = AppContext.BaseDirectory;
         var current = Directory.GetCurrentDirectory();
 
         var candidates = new[]
         {
-            Path.Combine(current, "prompt.txt"),
-            Path.Combine(current, "..", "Infra", "prompt.txt"),
-            Path.Combine(current, "Infra", "prompt.txt")
+            Path.Combine(baseDir, "prompts", "shipit.txt"),
+            Path.Combine(current, "prompts", "shipit.txt"),
+            Path.Combine(current, "shipit.txt"),
+            Path.Combine(current, "..", "Infra", "prompts", "shipit.txt")
         };
 
         foreach (var candidate in candidates)

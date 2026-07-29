@@ -107,7 +107,7 @@ public class CoupleAiRepositoryService : ICoupleAiRepositoryService
             {
                 ConversationHistory = history,
                 Status = true,
-                Error = null
+                Error = string.Empty
             };
 
         }
@@ -133,13 +133,24 @@ public class CoupleAiRepositoryService : ICoupleAiRepositoryService
 
     private string? ReadFromFile()
     {
-        string currentDir = Directory.GetCurrentDirectory();
-        string fullPath = Path.Combine(currentDir, "..", "Infra", "prompts", "cupid.txt");
-        if (!File.Exists(fullPath))
+        var baseDir = AppContext.BaseDirectory;
+        var currentDir = Directory.GetCurrentDirectory();
+
+        var candidates = new[]
         {
-            return null;
+            Path.Combine(baseDir, "prompts", "cupid.txt"),
+            Path.Combine(currentDir, "prompts", "cupid.txt"),
+            Path.Combine(currentDir, "cupid.txt"),
+            Path.Combine(currentDir, "..", "Infra", "prompts", "cupid.txt")
+        };
+
+        foreach (var candidate in candidates)
+        {
+            var fullPath = Path.GetFullPath(candidate);
+            if (File.Exists(fullPath))
+                return File.ReadAllText(fullPath);
         }
-        var read = File.ReadAllText(fullPath);
-        return read;
+
+        return null;
     }
 }

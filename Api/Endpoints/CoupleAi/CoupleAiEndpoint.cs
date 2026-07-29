@@ -39,7 +39,7 @@ public static class CoupleAiEndpoint
         return Results.Ok(new
         {
             status = "healthy",
-            version = 3.0,
+            version = 4.0,
             timestamp = DateTime.UtcNow,
             configured = isConfigured,
             message = isConfigured 

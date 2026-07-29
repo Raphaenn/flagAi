@@ -104,23 +104,25 @@ public sealed class CompatibilityAiClient : ICompatibilityAiAnalyzer
 
     private static string ResolvePromptPath()
     {
+        var baseDir = AppContext.BaseDirectory;
         var current = Directory.GetCurrentDirectory();
 
-        var localPath = Path.Combine(current, "shipit.txt");
-        if (File.Exists(localPath))
-            return localPath;
+        var candidates = new[]
+        {
+            Path.Combine(baseDir, "prompts", "shipit.txt"),
+            Path.Combine(current, "prompts", "shipit.txt"),
+            Path.Combine(current, "shipit.txt"),
+            Path.Combine(current, "..", "Infra", "prompts", "shipit.txt")
+        };
 
-        var infraPath = Path.Combine(current, "..", "Infra", "prompts" , "shipit.txt");
-        var fullInfraPath = Path.GetFullPath(infraPath);
-        if (File.Exists(fullInfraPath))
-            return fullInfraPath;
+        foreach (var candidate in candidates)
+        {
+            var fullPath = Path.GetFullPath(candidate);
+            if (File.Exists(fullPath))
+                return fullPath;
+        }
 
-        var rootInfraPath = Path.Combine(current, "Infra", "shipit.txt");
-        var fullRootInfraPath = Path.GetFullPath(rootInfraPath);
-        if (File.Exists(fullRootInfraPath))
-            return fullRootInfraPath;
-
-        throw new FileNotFoundException("prompt.txt not found. Expected in Infra folder.");
+        throw new FileNotFoundException("shipit.txt not found. Expected in prompts folder.");
     }
 
     private static string ExtractJson(string value)

@@ -1,0 +1,64 @@
+trigger:
+  - master   # use a branch correta (master ou main)
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  ACR_LOGIN_SERVER: flagsregistry.azurecr.io
+  IMAGE_NAME: cupidai-api
+  CONTAINER_APP_NAME: cupidai-api
+  RESOURCE_GROUP: flags
+
+stages:
+  
+  # ===============================
+  # BUILD & PUSH
+  # ===============================
+  - stage: BuildAndPush
+    displayName: Build & Push
+    jobs:
+      - job: Build
+        displayName: Build Docker Image
+        steps:
+          - checkout: self
+
+          - task: Docker@2
+            displayName: Build & Push image
+            inputs:
+              command: buildAndPush
+              containerRegistry: 'flagsregistry-acr'   # Service Connection do ACR
+              repository: $(IMAGE_NAME)
+              Dockerfile: 'Api/Dockerfile'
+              buildContext: '.'
+              tags: |
+                $(Build.BuildId)
+                latest
+  
+  
+  # ===============================
+  # DEPLOY
+  # ===============================
+  - stage: Deploy
+    displayName: Deploy to Azure Container Apps
+    dependsOn: BuildAndPush
+    condition: succeeded()
+    jobs:
+      - job: Deploy
+        displayName: Update Container App
+        steps:
+          - task: AzureCLI@2
+            displayName: Update Container App image
+            inputs:
+              azureSubscription: 'flags-azure-rm'   # Service Connection Azure RM
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                echo "Updating Container App image..."
+                
+                az containerapp update \
+                  --name $(CONTAINER_APP_NAME) \
+                  --resource-group $(RESOURCE_GROUP) \
+                  --image $(ACR_LOGIN_SERVER)/$(IMAGE_NAME):$(Build.BuildId)
+                
+                echo "Deploy finished successfully!"

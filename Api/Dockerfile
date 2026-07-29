@@ -6,6 +6,9 @@ EXPOSE 443
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 COPY ["Api/Api.csproj", "Api/"]
+COPY ["Infra/Infra.csproj", "Infra/"]
+COPY ["App/App.csproj", "App/"]
+COPY ["Domain/Domain.csproj", "Domain/"]
 RUN dotnet restore "Api/Api.csproj"
 COPY . .
 WORKDIR "/src/Api"
@@ -16,5 +19,6 @@ RUN dotnet publish "Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
+ENV ASPNETCORE_URLS=http://+:80
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "Api.dll"]

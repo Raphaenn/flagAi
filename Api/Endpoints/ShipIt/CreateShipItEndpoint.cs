@@ -1,5 +1,7 @@
 using Api.Models.ShipIt;
-using App.Services.Compatibility;
+using App.Dto;
+using App.UseCase;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Api.Endpoints.ShipIt;
 
@@ -8,7 +10,7 @@ public static class CreateShipItEndpoint
     public static IEndpointRouteBuilder MapCreateShipIt(
         this IEndpointRouteBuilder app)
     {
-        app.MapGet("/shipits/ai-health", (IConfiguration configuration) =>
+        app.MapGet("/api/shipits/ai-health", (IConfiguration configuration) =>
         {
             var baseUrl = configuration["Apis:AnthropicApi:BaseUrl"];
             var apiKey = configuration["Apis:AnthropicApi:ApiKey"];
@@ -74,52 +76,48 @@ public static class CreateShipItEndpoint
                     });
         });
 
-        app.MapPost("/shipit/compatibility", async (
+        app.MapPost("/api/shipit/compatibility", async Task<Results<Ok<ShipItResult>, BadRequest<string>>> (
             CreateShipItRequest request,
-            AnalyzeCompatibilityAppService appService,
+            AnalyzeCompatibility analyzeCompatibility,
             CancellationToken cancellationToken) =>
         {
             if (string.IsNullOrWhiteSpace(request.Description))
-                return Results.BadRequest("Description is required.");
+                return TypedResults.BadRequest("Description is required.");
 
             if (string.IsNullOrWhiteSpace(request.PersonA.Name) || string.IsNullOrWhiteSpace(request.PersonA.Email))
-                return Results.BadRequest("PersonA name and email are required.");
+                return TypedResults.BadRequest("PersonA name and email are required.");
 
             if (string.IsNullOrWhiteSpace(request.PersonB.Name) || string.IsNullOrWhiteSpace(request.PersonB.Email))
-                return Results.BadRequest("PersonB name and email are required.");
+                return TypedResults.BadRequest("PersonB name and email are required.");
 
-            var result = await appService.AnalyzeAsync(
+            if (!string.IsNullOrWhiteSpace(request.Language) && !IsSupportedLanguage(request.Language))
+                return TypedResults.BadRequest("Language must be one of: pt, en, es.");
+
+            var result = await analyzeCompatibility.AnalyzeAsync(
                 request.Description,
                 request.PersonA.Name,
                 request.PersonA.Email,
                 request.PersonB.Name,
                 request.PersonB.Email,
+                request.Language,
                 cancellationToken);
-
-            return Results.Ok(new
-            {
-                PersonA = new
-                {
-                    Name = request.PersonA.Name,
-                    Email = request.PersonA.Email,
-                    result.PersonA.Normalized
-                },
-                PersonB = new
-                {
-                    Name = request.PersonB.Name,
-                    Email = request.PersonB.Email,
-                    result.PersonB.Normalized
-                },
-                result.Summary,
-                result.Strengths,
-                result.PossibleConflicts,
-                result.MissingInfo,
-                result.Score,
-                result.Compatibility
-            });
+            
+            return TypedResults.Ok(result);
         }).RequireAuthorization();
 
         return app;
+    }
+
+    private static bool IsSupportedLanguage(string? language)
+    {
+        if (string.IsNullOrWhiteSpace(language))
+            return true;
+
+        var normalized = language.Trim().ToLowerInvariant();
+
+        return normalized is "pt" or "pt-br" or "pt-br" or "portuguese"
+            or "en" or "en-us" or "english"
+            or "es" or "es-es" or "spanish";
     }
 
     private static string? ResolvePromptPath()

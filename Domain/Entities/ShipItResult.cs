@@ -1,19 +1,21 @@
-namespace App.Dtos.CompatibilityDtos;
-
-public sealed record CompatibilityAnalysisResult(
-    CompatibilityPersonAnalysis PersonA,
-    CompatibilityPersonAnalysis PersonB,
+public sealed record ShipItResult(
+    PersonAnalysis PersonA,
+    PersonAnalysis PersonB,
     string Summary,
     IReadOnlyList<string> Strengths,
     IReadOnlyList<string> PossibleConflicts,
     IReadOnlyList<string> MissingInfo,
-    decimal Score = 0,
-    string Compatibility = "unknown"
+    decimal Score,
+    string Compatibility
     );
-    
-public sealed record CompatibilityPersonAnalysis(string Name, CompatibilityNormalizedProfile Normalized);  
-    
-public sealed record CompatibilityNormalizedProfile(
+
+public sealed record PersonAnalysis(
+    string Name,
+    IReadOnlyList<string> Tags,
+    NormalizedProfile Normalized
+    );
+
+public sealed record NormalizedProfile(
     string RelationshipGoal,
     string Lifestyle,
     string AffectionStyle,

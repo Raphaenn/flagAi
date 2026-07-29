@@ -69,51 +69,53 @@ Return this JSON format:
 
 {
 "personA": {
-"name": "",
-"normalized": {
-"socialEnergy": "low | medium | high | unknown",
-"communicationStyle": "reserved | direct | expressive | avoidant | unknown",
-"relationshipGoal": "casual | serious | marriage | unknown",
-"conflictStyle": "calm | direct | avoidant | emotional | defensive | unknown",
-"emotionalAvailability": "low | medium | high | unknown",
-"lifestylePace": "calm | balanced | busy | adventurous | unknown",
-"affectionStyle": "reserved | verbal | physical | acts_of_service | quality_time | unknown",
-"decisionMakingStyle": "independent | collaborative | impulsive | analytical | unknown",
-"familyOrientation": "low | medium | high | unknown",
-"faithImportance": "low | medium | high | unknown",
-"ambitionLevel": "low | medium | high | unknown",
-"opennessToChange": "low | medium | high | unknown",
-"humorStyle": "playful | sarcastic | dry | light | unknown",
-"financialMindset": "saver | spender | balanced | unknown"
-}
+    "name": "",
+    "tags": [],
+    "normalized": {
+        "socialEnergy": "low | medium | high | unknown",
+        "communicationStyle": "reserved | direct | expressive | avoidant | unknown",
+        "relationshipGoal": "casual | serious | marriage | unknown",
+        "conflictStyle": "calm | direct | avoidant | emotional | defensive | unknown",
+        "emotionalAvailability": "low | medium | high | unknown",
+        "lifestylePace": "calm | balanced | busy | adventurous | unknown",
+        "affectionStyle": "reserved | verbal | physical | acts_of_service | quality_time | unknown",
+        "decisionMakingStyle": "independent | collaborative | impulsive | analytical | unknown",
+        "familyOrientation": "low | medium | high | unknown",
+        "faithImportance": "low | medium | high | unknown",
+        "ambitionLevel": "low | medium | high | unknown",
+        "opennessToChange": "low | medium | high | unknown",
+        "humorStyle": "playful | sarcastic | dry | light | unknown",
+        "financialMindset": "saver | spender | balanced | unknown"
+    }
 },
 "personB": {
-"name": "",
-"normalized": {
-"socialEnergy": "low | medium | high | unknown",
-"communicationStyle": "reserved | direct | expressive | avoidant | unknown",
-"relationshipGoal": "casual | serious | marriage | unknown",
-"conflictStyle": "calm | direct | avoidant | emotional | defensive | unknown",
-"emotionalAvailability": "low | medium | high | unknown",
-"lifestylePace": "calm | balanced | busy | adventurous | unknown",
-"affectionStyle": "reserved | verbal | physical | acts_of_service | quality_time | unknown",
-"decisionMakingStyle": "independent | collaborative | impulsive | analytical | unknown",
-"familyOrientation": "low | medium | high | unknown",
-"faithImportance": "low | medium | high | unknown",
-"ambitionLevel": "low | medium | high | unknown",
-"opennessToChange": "low | medium | high | unknown",
-"humorStyle": "playful | sarcastic | dry | light | unknown",
-"financialMindset": "saver | spender | balanced | unknown"
-}
+    "name": "",
+    "tags": [],
+    "normalized": {
+        "socialEnergy": "low | medium | high | unknown",
+        "communicationStyle": "reserved | direct | expressive | avoidant | unknown",
+        "relationshipGoal": "casual | serious | marriage | unknown",
+        "conflictStyle": "calm | direct | avoidant | emotional | defensive | unknown",
+        "emotionalAvailability": "low | medium | high | unknown",
+        "lifestylePace": "calm | balanced | busy | adventurous | unknown",
+        "affectionStyle": "reserved | verbal | physical | acts_of_service | quality_time | unknown",
+        "decisionMakingStyle": "independent | collaborative | impulsive | analytical | unknown",
+        "familyOrientation": "low | medium | high | unknown",
+        "faithImportance": "low | medium | high | unknown",
+        "ambitionLevel": "low | medium | high | unknown",
+        "opennessToChange": "low | medium | high | unknown",
+        "humorStyle": "playful | sarcastic | dry | light | unknown",
+        "financialMindset": "saver | spender | balanced | unknown"
+    }
 },
 "compatibilityInputs": {
-"sharedValuesCount": 0,
-"sharedInterestsCount": 0,
-"positiveSignalsCount": 0,
-"riskSignalsCount": 0,
-"oppositeTraitsImpact": "positive | neutral | mixed | negative",
-"conflictRiskLevel": "low | medium | high | unknown",
-"confidence": "low | medium | high"
+    "sharedValuesCount": 0,
+    "sharedInterestsCount": 0,
+    "positiveSignalsCount": 0,
+    "riskSignalsCount": 0,
+    "oppositeTraitsImpact": "positive | neutral | mixed | negative",
+    "conflictRiskLevel": "low | medium | high | unknown",
+    "confidence": "low | medium | high"
 },
 "summary": "",
 "strengths": [],
@@ -123,6 +125,7 @@ Return this JSON format:
 "Compatibility": "low | medium | high | unknown",
 }
 
+tags = should be contain just 3 items
 normalized fields = used to calculate score
 summary = used to show explanation
 strengths = used to show positive points

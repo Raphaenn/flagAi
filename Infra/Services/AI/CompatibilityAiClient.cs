@@ -1,41 +1,48 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using App.Abstractions;
-using App.Dtos.CompatibilityDtos;
 using System.Text.RegularExpressions;
 using System.Net.Http.Headers;
+using App.Dto.Compatibility;
+using App.Interfaces;
+using Infra.Dto;
+using Infra.Mappers;
 
 namespace Infra.Services.AI;
 
-public sealed class CompatibilityAiService : ICompatibilityAiService
+public sealed class CompatibilityAiClient : ICompatibilityAiAnalyzer
 {
     private readonly HttpClient _httpClient;
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        NumberHandling = JsonNumberHandling.AllowReadingFromString
     };
 
-    public CompatibilityAiService(HttpClient client)
+    public CompatibilityAiClient(HttpClient client)
     {
         _httpClient = client;
     }
     
-    public async Task<CompatibilityAnalysisResult> AnalyzeAsync(string input, CancellationToken cancellationToken)
+    public async Task<CompatibilityResultDto> AnalyzeAsync(string input, string? language, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(input))
             throw new ArgumentException("Input cannot be empty.", nameof(input));
 
         var promptPath = ResolvePromptPath();
         var systemPrompt = await File.ReadAllTextAsync(promptPath, cancellationToken);
+        var languageInstruction = BuildLanguageInstruction(language);
+        var effectiveSystemPrompt = string.IsNullOrWhiteSpace(languageInstruction)
+            ? systemPrompt
+            : $"{systemPrompt}\n\n{languageInstruction}";
         
         var payload = new
         {
             model = "claude-haiku-4-5-20251001",
             max_tokens = 1024,
-            system = systemPrompt,
+            system = effectiveSystemPrompt,
             messages = new[]
             {
                 new
@@ -70,26 +77,45 @@ public sealed class CompatibilityAiService : ICompatibilityAiService
 
         var jsonText = ExtractJson(textPart);
 
-        var modelResponse = JsonSerializer.Deserialize<CompatibilityAnalysisResult>(jsonText, _jsonOptions)
+        var modelResponse = JsonSerializer.Deserialize<ShipItResultAiDto>(jsonText, _jsonOptions)
                            ?? throw new InvalidOperationException("AI response could not be deserialized.");
+        
+        return modelResponse.ToAppDto();
+    }
 
-        return modelResponse;
+    private static string BuildLanguageInstruction(string? language)
+    {
+        if (string.IsNullOrWhiteSpace(language))
+            return string.Empty;
+
+        var normalized = language.Trim().ToLowerInvariant();
+        var languageName = normalized switch
+        {
+            "pt" or "pt-br" or "pt-pt" or "portuguese" => "Portuguese",
+            "en" or "en-us" or "en-gb" or "english" => "English",
+            "es" or "es-es" or "es-mx" or "spanish" => "Spanish",
+            _ => null
+        };
+
+        return languageName is null
+            ? string.Empty
+            : $"IMPORTANT: Return all response content in {languageName}.";
     }
 
     private static string ResolvePromptPath()
     {
         var current = Directory.GetCurrentDirectory();
 
-        var localPath = Path.Combine(current, "prompt.txt");
+        var localPath = Path.Combine(current, "shipit.txt");
         if (File.Exists(localPath))
             return localPath;
 
-        var infraPath = Path.Combine(current, "..", "Infra", "prompt.txt");
+        var infraPath = Path.Combine(current, "..", "Infra", "prompts" , "shipit.txt");
         var fullInfraPath = Path.GetFullPath(infraPath);
         if (File.Exists(fullInfraPath))
             return fullInfraPath;
 
-        var rootInfraPath = Path.Combine(current, "Infra", "prompt.txt");
+        var rootInfraPath = Path.Combine(current, "Infra", "shipit.txt");
         var fullRootInfraPath = Path.GetFullPath(rootInfraPath);
         if (File.Exists(fullRootInfraPath))
             return fullRootInfraPath;

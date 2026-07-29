@@ -10,7 +10,6 @@ out/
 *.userosscache
 *.sln.docstates
 appsettings.Development.json
-appsettings.json
 
 # Logs
 *.log

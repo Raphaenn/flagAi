@@ -1,20 +1,17 @@
 trigger:
-  - master   # use a branch correta (master ou main)
+  - master   # ajuste se a branch for main
 
 pool:
   vmImage: ubuntu-latest
 
 variables:
+  ACR_NAME: flagsregistry
   ACR_LOGIN_SERVER: flagsregistry.azurecr.io
   IMAGE_NAME: cupidai-api
   CONTAINER_APP_NAME: cupidai-api
   RESOURCE_GROUP: flags
 
 stages:
-  
-  # ===============================
-  # BUILD & PUSH
-  # ===============================
   - stage: BuildAndPush
     displayName: Build & Push
     jobs:
@@ -22,23 +19,25 @@ stages:
         displayName: Build Docker Image
         steps:
           - checkout: self
-
-          - task: Docker@2
+          - task: AzureCLI@2
             displayName: Build & Push image
             inputs:
-              command: buildAndPush
-              containerRegistry: 'flagsregistry-acr'   # Service Connection do ACR
-              repository: $(IMAGE_NAME)
-              Dockerfile: 'Api/Dockerfile'
-              buildContext: '.'
-              tags: |
-                $(Build.BuildId)
-                latest
-  
-  
-  # ===============================
-  # DEPLOY
-  # ===============================
+              azureSubscription: 'flags-azure-rm'
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                echo "Logging into ACR..."
+                az acr login --name $(ACR_NAME)
+                echo "Building Docker image..."
+                docker build \
+                  -f Api/Dockerfile \
+                  -t $(ACR_LOGIN_SERVER)/$(IMAGE_NAME):$(Build.BuildId) \
+                  -t $(ACR_LOGIN_SERVER)/$(IMAGE_NAME):latest \
+                  .
+                echo "Pushing Docker image..."
+                docker push $(ACR_LOGIN_SERVER)/$(IMAGE_NAME):$(Build.BuildId)
+                docker push $(ACR_LOGIN_SERVER)/$(IMAGE_NAME):latest
+
   - stage: Deploy
     displayName: Deploy to Azure Container Apps
     dependsOn: BuildAndPush
@@ -50,15 +49,13 @@ stages:
           - task: AzureCLI@2
             displayName: Update Container App image
             inputs:
-              azureSubscription: 'flags-azure-rm'   # Service Connection Azure RM
+              azureSubscription: 'flags-azure-rm'
               scriptType: bash
               scriptLocation: inlineScript
               inlineScript: |
                 echo "Updating Container App image..."
-                
                 az containerapp update \
                   --name $(CONTAINER_APP_NAME) \
                   --resource-group $(RESOURCE_GROUP) \
                   --image $(ACR_LOGIN_SERVER)/$(IMAGE_NAME):$(Build.BuildId)
-                
                 echo "Deploy finished successfully!"

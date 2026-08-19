@@ -74,8 +74,14 @@ public class CoupleAiRepositoryService : ICoupleAiRepositoryService
                 max_tokens = _settings.MaxTokens,
                 messages
             };
-            
-            var response = await _httpClient.PostAsJsonAsync("/v1/messages", request, ct);
+
+            if (!Uri.TryCreate(_settings.BaseUrl, UriKind.Absolute, out var baseUri))
+            {
+                throw new InvalidOperationException("ApiSettings.BaseUrl deve ser uma URI absoluta válida.");
+            }
+
+            var endpoint = new Uri(baseUri, "v1/messages");
+            var response = await _httpClient.PostAsJsonAsync(endpoint, request, ct);
             response.EnsureSuccessStatusCode();
             var result = await response.Content.ReadFromJsonAsync<AnthropicResponse>(cancellationToken: ct);
             var assistantMessage = result?
@@ -103,12 +109,15 @@ public class CoupleAiRepositoryService : ICoupleAiRepositoryService
                 "AI response for user {UserId}: {Response}",
                 chat.UserId,
                 assistantMessage);
-            return new ChatContent(userId: chat.UserId, message: chat.Message)
+            var output = new ChatContent(userId: chat.UserId, message: chat.Message)
             {
                 ConversationHistory = history,
                 Status = true,
                 Error = string.Empty
             };
+            output.Message = assistantMessage;
+
+            return output;
 
         }
         catch (Exception ex)

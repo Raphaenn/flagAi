@@ -4,9 +4,7 @@ using App.Interfaces;
 using App.Interfaces.CoupleAi;
 using App.Services.CoupleAi;
 using App.UseCase;
-using Domain.Interfaces;
 using Infra.Services.AI;
-using Infra.Services.CoupleAi;
 
 namespace Api.Extensions;
 
@@ -16,7 +14,6 @@ public static class DependencyInjection
     {
         services.AddScoped<AnalyzeCompatibility>();
         services.AddScoped<ICoupleAiService, ChatWithAiService>();
-        services.AddScoped<ICoupleAiRepositoryService, CoupleAiRepositoryService>();
         services.Auth(config);
         services.Configure<CoupleAiSettings>(
             config.GetSection(CoupleAiSettings.SectionName));

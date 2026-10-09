@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -16,6 +17,7 @@ public class CoupleAiRepositoryService : ICoupleAiRepositoryService
     private readonly ApiSettings _settings;
     private readonly ILogger<CoupleAiRepositoryService> _logger;
     private readonly ConversationHistoryService _historyService;
+    private readonly string _systemPrompt;
 
     public CoupleAiRepositoryService(
         HttpClient httpClient,
@@ -27,6 +29,8 @@ public class CoupleAiRepositoryService : ICoupleAiRepositoryService
         _settings = options.Value;
         _logger = logger;
         _historyService = historyService;
+        _systemPrompt = ReadFromFile()
+                        ?? throw new InvalidOperationException("AI prompt not found.");
     }
     
     public async Task<ChatContent> ProcessMessageAsync(ChatContent chat, CancellationToken ct)
@@ -43,7 +47,7 @@ public class CoupleAiRepositoryService : ICoupleAiRepositoryService
                 : _historyService.GetHistory(chat.UserId);
             
             var messages = history
-                .TakeLast(10)
+                .TakeLast(4)
                 .Select(message => new
                 {
                     role = message.Role,
@@ -57,33 +61,38 @@ public class CoupleAiRepositoryService : ICoupleAiRepositoryService
                 content = chat.Message
             });
 
-            // Monta o payload da API
-            string? prompt = ReadFromFile();
-            if (prompt == null)
-            {
-                return new ChatContent(userId: chat.UserId, message: chat.Message)
-                {
-                    Status = false,
-                    Error = "Prompt error"
-                };
-            }
-            
             var request = new
             {
                 model = _settings.Model,
                 max_tokens = _settings.MaxTokens,
+                system = new[]
+                {
+                    new
+                        {
+                        type = "text",
+                        text = _systemPrompt,
+                        cache_control = new
+                        {
+                            type = "ephemeral"
+                        }
+                    }
+                },
                 messages
             };
+            
+            var stopwatch = Stopwatch.StartNew();
 
-            if (!Uri.TryCreate(_settings.BaseUrl, UriKind.Absolute, out var baseUri))
-            {
-                throw new InvalidOperationException("ApiSettings.BaseUrl deve ser uma URI absoluta válida.");
-            }
-
-            var endpoint = new Uri(baseUri, "v1/messages");
-            var response = await _httpClient.PostAsJsonAsync(endpoint, request, ct);
+            using var response = await _httpClient.PostAsJsonAsync(
+                "v1/messages",
+                request,
+                _jsonOptions,
+                ct);
+            
             response.EnsureSuccessStatusCode();
             var result = await response.Content.ReadFromJsonAsync<AnthropicResponse>(cancellationToken: ct);
+            
+            stopwatch.Stop();
+            
             var assistantMessage = result?
                 .Content?
                 .FirstOrDefault()?
@@ -98,17 +107,42 @@ public class CoupleAiRepositoryService : ICoupleAiRepositoryService
                 };
             }
             
+            
             history.Add(new Message
             {
                 Role = "user",
                 Content = chat.Message
             });
+            
+            history.Add(new Message
+            {
+                Role = "assistant",
+                Content = assistantMessage
+            });
+            
             _historyService.SaveHistory(chat.UserId, history);
             
-            _logger.LogDebug(
-                "AI response for user {UserId}: {Response}",
-                chat.UserId,
-                assistantMessage);
+            var usage = result?.Usage;
+            
+            _logger.LogInformation(
+                """
+                Claude API metrics -
+                InputTokens: {InputTokens},
+                OutputTokens: {OutputTokens},
+                CacheCreated: {CacheCreated},
+                CacheRead: {CacheRead},
+                DurationMs: {DurationMs}
+                """,
+                usage?.InputTokens ?? 0,
+                usage?.OutputTokens ?? 0,
+                usage?.CacheCreationInputTokens ?? 0,
+                usage?.CacheReadInputTokens ?? 0,
+                stopwatch.ElapsedMilliseconds);
+            
+            // _logger.LogDebug(
+            //     "AI response for user {UserId}: {Response}",
+            //     chat.UserId,
+            //     assistantMessage);
             var output = new ChatContent(userId: chat.UserId, message: chat.Message)
             {
                 ConversationHistory = history,
@@ -136,9 +170,23 @@ public class CoupleAiRepositoryService : ICoupleAiRepositoryService
         return !string.IsNullOrWhiteSpace(_settings.AnthropicApiKey);
     }
     
-    private sealed record AnthropicResponse(IReadOnlyList<AnthropicContentPart>? Content);
+    private sealed record AnthropicResponse(IReadOnlyList<AnthropicContentPart>? Content, AnthropicUsage? Usage);
 
     private sealed record AnthropicContentPart(string Type, string? Text);
+    
+    private sealed record AnthropicUsage(
+        [property: JsonPropertyName("input_tokens")]
+        int InputTokens,
+
+        [property: JsonPropertyName("output_tokens")]
+        int OutputTokens,
+        
+        [property: JsonPropertyName("cache_creation_input_tokens")]
+        int CacheCreationInputTokens,
+
+        [property: JsonPropertyName("cache_read_input_tokens")]
+        int CacheReadInputTokens
+        );
 
     private string? ReadFromFile()
     {
@@ -162,4 +210,10 @@ public class CoupleAiRepositoryService : ICoupleAiRepositoryService
 
         return null;
     }
+    
+    private readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true
+    };
 }

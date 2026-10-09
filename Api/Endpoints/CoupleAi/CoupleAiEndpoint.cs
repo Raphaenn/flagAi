@@ -39,7 +39,7 @@ public static class CoupleAiEndpoint
         return Results.Ok(new
         {
             status = "healthy",
-            version = 4.0,
+            version = 4.1,
             timestamp = DateTime.UtcNow,
             configured = isConfigured,
             message = isConfigured 
@@ -54,4 +54,6 @@ public static class CoupleAiEndpoint
         var response = await coupleAiService.ChatWithAi(req, cancellationToken);
         return Results.Ok(response);
     }
+    
+    // todo -> Create stream endpoint to better responses
 }

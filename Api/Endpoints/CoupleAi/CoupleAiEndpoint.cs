@@ -24,7 +24,7 @@ public static class CoupleAiEndpoint
     {
         return Results.Ok(new
         {
-            version = "1.0.1",
+            version = "1.0.2",
             timestamp = DateTime.UtcNow
         });
     }

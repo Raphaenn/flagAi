@@ -22,4 +22,9 @@ public class ChatWithAiService : ICoupleAiService
         ChatContent chatData = await _coupleAiRepositoryService.ProcessMessageAsync(parsed, ct);
         return ChatContentMap.ChatMessageToResponse(chatData);
     }
+
+    public async Task<string> ConflictAnalyzer(string message, CancellationToken ct)
+    {
+        throw new NotImplementedException();
+    }
 }

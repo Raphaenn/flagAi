@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Api.Models;
 using App.Dto.CoupleAi;
 using App.Interfaces.CoupleAi;
@@ -11,11 +12,12 @@ public static class CoupleAiEndpoint
     
     public static IEndpointRouteBuilder MapCreateCoupleAi(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/couple-ai").WithTags("CoupleAi");
+        var group = app.MapGroup("/api/couple-ai").WithTags("CoupleAi").RequireAuthorization();
 
         group.MapPost("/version", GetVersion);
         group.MapGet("/health", HealthCheck);
         group.MapPost("/message", CreateCouple);
+        group.MapPost("/conflict-lab", CheckConflict);
 
         return group;
     }
@@ -53,6 +55,24 @@ public static class CoupleAiEndpoint
     {
         var response = await coupleAiService.ChatWithAi(req, cancellationToken);
         return Results.Ok(response);
+    }
+
+    private async static Task<IResult> CheckConflict(ClaimsPrincipal user, ConflictContextReq req, ICoupleAiService coupleAiService, CancellationToken ct)
+    {
+        Console.WriteLine(GetUserId(user));
+        string res = await coupleAiService.ConflictAnalyzer(req.Text, ct);
+        return Results.Ok(new
+        {
+            status = "healthy",
+            version = 1.0,
+            timestamp = DateTime.UtcNow,
+            message = res 
+        });
+    }
+
+    private static string GetUserId(ClaimsPrincipal user)
+    {
+        return user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub") ?? throw new UnauthorizedAccessException("Invalid token");
     }
     
     // todo -> Create stream endpoint to better responses

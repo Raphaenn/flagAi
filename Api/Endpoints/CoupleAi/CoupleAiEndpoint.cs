@@ -59,15 +59,13 @@ public static class CoupleAiEndpoint
 
     private async static Task<IResult> CheckConflict(ClaimsPrincipal user, ConflictContextReq req, ICoupleAiService coupleAiService, CancellationToken ct)
     {
-        Console.WriteLine(GetUserId(user));
-        string res = await coupleAiService.ConflictAnalyzer(req.Text, ct);
-        return Results.Ok(new
+        CoupleMessageRequestDto messageData = new CoupleMessageRequestDto()
         {
-            status = "healthy",
-            version = 1.0,
-            timestamp = DateTime.UtcNow,
-            message = res 
-        });
+            UserId = GetUserId(user),
+            Message = req.Text
+        };
+        CoupleMessageResponseDto res = await coupleAiService.ConflictAnalyzer(messageData, ct);
+        return Results.Ok(res);
     }
 
     private static string GetUserId(ClaimsPrincipal user)

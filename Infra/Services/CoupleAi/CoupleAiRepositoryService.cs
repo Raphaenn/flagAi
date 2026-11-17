@@ -139,16 +139,13 @@ public class CoupleAiRepositoryService : ICoupleAiRepositoryService
                 usage?.CacheReadInputTokens ?? 0,
                 stopwatch.ElapsedMilliseconds);
             
-            // _logger.LogDebug(
-            //     "AI response for user {UserId}: {Response}",
-            //     chat.UserId,
-            //     assistantMessage);
             var output = new ChatContent(userId: chat.UserId, message: chat.Message)
             {
                 ConversationHistory = history,
                 Status = true,
                 Error = string.Empty
             };
+            
             output.Message = assistantMessage;
 
             return output;

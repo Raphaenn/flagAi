@@ -32,6 +32,15 @@ public static class DependencyInjection
             client.DefaultRequestHeaders.Add("x-api-key", settings.AnthropicApiKey);
             client.DefaultRequestHeaders.Add("anthropic-version", "2023-06-01");
         });
+        
+        services.AddHttpClient<IConflictLabServiceRepository, ConflictLabServiceRepository>((sp, client) =>
+        {
+            var settings = sp.GetRequiredService<IOptions<ApiSettings>>().Value;
+
+            client.BaseAddress = new Uri(settings.BaseUrl);
+            client.DefaultRequestHeaders.Add("x-api-key", settings.AnthropicApiKey);
+            client.DefaultRequestHeaders.Add("anthropic-version", "2023-06-01");
+        });
 
         return services;
     }

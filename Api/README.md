@@ -422,3 +422,9 @@ missingInfo = used to show confidence or incomplete analysis
   "possibleConflicts": ["Different social energy levels"]
 }
 ```
+
+# Chat context ai
+
+## Ideia
+
+- Get real time chat context and give user some time and evaluations about the conversations as well help user to get better answers.  

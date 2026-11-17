@@ -6,5 +6,5 @@ public interface ICoupleAiService
 {
     Task<CoupleMessageResponseDto> ChatWithAi(CoupleMessageRequestDto messageData, CancellationToken ct);
 
-    Task<string> ConflictAnalyzer(string message, CancellationToken ct);
+    Task<CoupleMessageResponseDto> ConflictAnalyzer(CoupleMessageRequestDto messageData, CancellationToken ct);
 }
